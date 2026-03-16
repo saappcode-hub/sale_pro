@@ -80,6 +80,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VariationTemplateController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarrantyController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -236,27 +237,6 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('/products/update-kpi', [ProductController::class, 'updateKpi'])->name('products.update-kpi');
 
     Route::resource('products', ProductController::class);
-    Route::get('/toggle-subscription/{id}', 'SellPosController@toggleRecurringInvoices');
-    Route::post('/sells/pos/get-types-of-service-details', 'SellPosController@getTypesOfServiceDetails');
-    Route::get('/sells/subscriptions', 'SellPosController@listSubscriptions');
-    Route::get('/sells/duplicate/{id}', 'SellController@duplicateSell');
-    Route::get('/sells/drafts', 'SellController@getDrafts');
-    Route::get('/sells/convert-to-draft/{id}', 'SellPosController@convertToInvoice');
-    Route::get('/sells/convert-to-proforma/{id}', 'SellPosController@convertToProforma');
-    Route::get('/sells/quotations', 'SellController@getQuotations');
-    Route::get('/sells/draft-dt', 'SellController@getDraftDatables');
-    Route::resource('sells', 'SellController')->except(['show']);
-    Route::get('/sells/copy-quotation/{id}', [SellPosController::class, 'copyQuotation']);
-    Route::get('/sell/create-from-sales-order/{id}', [SellController::class, 'createFromSalesOrder'])->name('sell.createFromSalesOrder');
-    Route::get('/get-sales-order-lines-for-create', [SellController::class, 'getSalesOrderLinesForCreate']);
-
-    Route::post('/import-purchase-products', [PurchaseController::class, 'importPurchaseProducts']);
-    Route::post('/purchases/update-status', [PurchaseController::class, 'updateStatus']);
-    Route::get('/purchases/get_products', [PurchaseController::class, 'getProducts']);
-    Route::get('/purchases/get_suppliers', [PurchaseController::class, 'getSuppliers']);
-    Route::post('/purchases/get_purchase_entry_row', [PurchaseController::class, 'getPurchaseEntryRow']);
-    Route::post('/purchases/check_ref_number', [PurchaseController::class, 'checkRefNumber']);
-    Route::resource('purchases', PurchaseController::class)->except(['show']);
 
     Route::get('/toggle-subscription/{id}', [SellPosController::class, 'toggleRecurringInvoices']);
     Route::post('/sells/pos/get-types-of-service-details', [SellPosController::class, 'getTypesOfServiceDetails']);
@@ -268,8 +248,19 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/sells/quotations', [SellController::class, 'getQuotations']);
     Route::get('/sells/draft-dt', [SellController::class, 'getDraftDatables']);
     Route::resource('sells', SellController::class)->except(['show']);
+    Route::get('/sells/copy-quotation/{id}', [SellPosController::class, 'copyQuotation']);
+    Route::get('/sell/create-from-sales-order/{id}', [SellController::class, 'createFromSalesOrder'])->name('sell.createFromSalesOrder');
+    Route::get('/get-sales-order-lines-for-create', [SellController::class, 'getSalesOrderLinesForCreate']);
     Route::get('/sells/create-invoice/{id}', [SellController::class, 'createinvoicedraft'])->name('sell.createinvoicedraft');
     Route::get('/sells/delivery-label/{id}', [SellController::class, 'getDeliveryLabel'])->name('sell.getDeliveryLabel');
+
+    Route::post('/import-purchase-products', [PurchaseController::class, 'importPurchaseProducts']);
+    Route::post('/purchases/update-status', [PurchaseController::class, 'updateStatus']);
+    Route::get('/purchases/get_products', [PurchaseController::class, 'getProducts']);
+    Route::get('/purchases/get_suppliers', [PurchaseController::class, 'getSuppliers']);
+    Route::post('/purchases/get_purchase_entry_row', [PurchaseController::class, 'getPurchaseEntryRow']);
+    Route::post('/purchases/check_ref_number', [PurchaseController::class, 'checkRefNumber']);
+    Route::resource('purchases', PurchaseController::class)->except(['show']);
 
     Route::get('/import-sales', [ImportSalesController::class, 'index']);
     Route::post('/import-sales/preview', [ImportSalesController::class, 'preview']);
@@ -535,7 +526,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/cash-deposit/{id}/attachments', [CashDepositController::class, 'getDepositAttachments'])->name('cash_deposit.attachments');
 
     // --- NEW ROUTES ---
-    Route::get('/cash-deposit/search-payments', [CashDepositController::class, 'searchPendingPayments'])->name('cash_deposit.search_payments'); // <--- NEW SEARCH ROUTE
+    Route::get('/cash-deposit/search-payments', [CashDepositController::class, 'searchPendingPayments'])->name('cash_deposit.search_payments');
     Route::get('/cash-deposit/{id}/edit', [CashDepositController::class, 'edit'])->name('cash_deposit.edit');
     Route::put('/cash-deposit/{id}', [CashDepositController::class, 'update'])->name('cash_deposit.update');
     Route::delete('/cash-deposit/{id}', [CashDepositController::class, 'destroy'])->name('cash_deposit.destroy');
@@ -548,7 +539,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::get('/business/purchase-types', [BusinessController::class, 'getPurchaseTypes']);
     Route::post('/business/purchase-types', [BusinessController::class, 'savePurchaseType']);
-    Route::post('/business/purchase-types/update', [BusinessController::class, 'updatePurchaseType']); // New for inline edit
+    Route::post('/business/purchase-types/update', [BusinessController::class, 'updatePurchaseType']);
     Route::delete('/business/purchase-types/{id}', [BusinessController::class, 'deletePurchaseType']);
     Route::get('/business/get-exchange-products', [BusinessController::class, 'getExchangeProducts']);
 
@@ -566,19 +557,17 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::resource('warranties', WarrantyController::class);
 
     Route::resource('dashboard-configurator', DashboardConfiguratorController::class)
-    ->only(['edit', 'update']);
+        ->only(['edit', 'update']);
 
     Route::resource('telegram-setting', TelegramSettingController::class);
     Route::post('telegram-setting/{id}/toggle-status', [TelegramSettingController::class, 'toggleStatus'])
-     ->name('telegram-setting.toggle-status');
+        ->name('telegram-setting.toggle-status');
 
     Route::get('view-media/{model_id}', [SellController::class, 'viewMedia']);
-    // web.php
-    Route::get('/sales-order-visit/{id}', [App\Http\Controllers\SalesOrderVisitController::class, 'show'])->name('sales-order-visit.show');
     Route::get('/sales-order-visit-history', [SalesOrderVisitController::class, 'getVisitHistory'])->name('sales-order-visit.history');
     Route::resource('sales_visit', SalesOrderVisitController::class)->only(['index']);
-    Route::post('rewards-exchange', [RewardExchangeController::class, 'store'])->name('reward-exchange.store');
-    Route::resource('/sales-order-visit', SalesOrderVisitController::class);
+    // Route::post('rewards-exchange', [RewardExchangeController::class, 'store'])->name('reward-exchange.store');
+    Route::resource('sales-order-visit', SalesOrderVisitController::class);
     Route::get('/daily-sale-visit-summary', [SalesOrderVisitController::class, 'dailySummary'])->name('daily-sale-visit-summary');
     Route::post('/daily-sale-visit-summary/send-telegram', [SalesOrderVisitController::class, 'sendToTelegram'])->name('daily-sale-visit-summary.send-telegram');
     
@@ -587,30 +576,25 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('gps-tracking/show-data/{trip_id}', [GpsTrackingController::class, 'getShowData'])->name('gps-tracking.show-data');
 
     Route::get('/api/osrm-match', function (Illuminate\Http\Request $request) {
-        // 1. Authenticate user (only logged-in users can access)
         if (!auth()->check()) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         
         $coordinates = $request->get('coordinates');
         
-        // 2. Validate coordinates format
         if (!$coordinates) {
             return response()->json(['error' => 'Coordinates required'], 400);
         }
         
-        // 3. Validate coordinate format (basic check)
         if (!preg_match('/^[\d\.,;\s-]+$/', $coordinates)) {
             return response()->json(['error' => 'Invalid coordinates format'], 400);
         }
         
-        // 4. Limit coordinate pairs (prevent abuse)
         $pairs = explode(';', $coordinates);
         if (count($pairs) > 500) {
             return response()->json(['error' => 'Too many coordinates'], 400);
         }
         
-        // 5. OSRM URL with timeout
         $osrmUrl = 'http://157.10.73.40:5000/match/v1/driving/' . $coordinates;
         $queryString = $request->getQueryString();
         
@@ -622,10 +606,9 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
         }
         
         try {
-            // 6. Use context with timeout instead of file_get_contents
             $context = stream_context_create([
                 'http' => [
-                    'timeout' => 10, // 10 second timeout
+                    'timeout' => 10,
                     'method' => 'GET'
                 ]
             ]);
@@ -637,7 +620,6 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
                 return response()->json(['error' => 'Failed to fetch from OSRM'], 500);
             }
             
-            // 7. Log the request
             \Log::info('OSRM request successful', [
                 'user_id' => auth()->id(),
                 'coordinate_pairs' => count($pairs)
@@ -653,10 +635,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
         }
     })->middleware('auth');
 
-    // 2. Main Index Route (used for both the list and the map data AJAX)
     Route::get('gps-tracking', [GpsTrackingController::class, 'index'])->name('gps-tracking.index');
-
-    // 3. Show Trip Details Route (General resource route)
     Route::get('gps-tracking/{id}', [GpsTrackingController::class, 'show'])->name('gps-tracking.show');
 
     Route::get('/sales-reward/{id}', [SalesOrderRewardController::class, 'show'])->name('sales_reward.show');
@@ -669,7 +648,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('sales_reward/check-transaction', [SalesOrderRewardController::class, 'checkTransaction'])->name('sales_reward.check_transaction');
     Route::post('/sales-reward/check-stock', [SalesOrderRewardController::class, 'checkStock'])->name('sales_reward.check_stock');
     Route::resource('sale-order-scan', SalesOrderScanController::class)
-    ->only(['index']);
+        ->only(['index']);
     Route::delete('/sales-reward/{id}', [SalesOrderRewardController::class, 'destroy'])->name('sales_reward.destroy');
     
     Route::resource('stock-movement-report', StockMovementReportController::class)->only(['index']);
@@ -692,45 +671,33 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('all-ring/cash-ring/{id}', [AllRingBalanceController::class, 'showCashRing'])->name('all-ring.showCashRing');
     Route::get('all-ring/get-cash-ring-stock-history/{id}', [AllRingBalanceController::class, 'getCashRingStockHistory'])->name('all-ring.getCashRingStockHistory');
 
-
     Route::resource('supplier-cash-ring-balance', SupplierCashRingBalanceController::class)->only(['index', 'create', 'store', 'edit', 'update']);
-    // Additional routes for AJAX functionality
     Route::get('supplier-cash-ring-balance/search-product', [SupplierCashRingBalanceController::class, 'searchProduct'])->name('supplier-cash-ring-balance.searchProduct');
     Route::get('supplier-cash-ring-balance/get-product-stock', [SupplierCashRingBalanceController::class, 'getProductStock']);
-    // Add this route to your web.php - following the same pattern as your working customer code
     Route::get('supplier-cash-ring-balance/show/{id}', [SupplierCashRingBalanceController::class, 'show'])->name('supplier-cash-ring-balance.show');
-
-    // Show update status form
     Route::get('supplier-cash-ring-balance/{id}/update-status', [SupplierCashRingBalanceController::class, 'showUpdateStatus'])
         ->name('supplier-cash-ring-balance.show-update-status');
-
-    // Update status
     Route::patch('supplier-cash-ring-balance/{id}/update-status', [SupplierCashRingBalanceController::class, 'updateStatus'])
         ->name('supplier-cash-ring-balance.update-status');
 
-    // Resource route for index
     Route::resource('customer-ring', CustomerRingController::class)->only(['index']);
     Route::resource('sale-tracking-report', ReportSaleTrackingController::class)->only(['index']);
     Route::get('sale-tracking-report-data', [ReportSaleTrackingController::class, 'SaleTrackingReport'])->name('sale-tracking-report.data');
     Route::get('competitor-report-data', [ReportSaleTrackingController::class, 'CompetitorReport'])->name('competitor-report.data');
 
     Route::get('customer-ring/getRingStockHistory', [CustomerRingController::class, 'getRingStockHistory'])
-    ->name('customer-ring.getRingStockHistory');
+        ->name('customer-ring.getRingStockHistory');
 
-    // Route for showing specific details (show_ring_balance)
     Route::get('customer-ring/show-ring/{contact_id}', [CustomerRingController::class, 'show_ring'])->name('customer-ring.show_ring');
-
-    // Route for showing general details (show)
     Route::get('customer-ring/view/{contact_id}', [CustomerRingController::class, 'show'])->name('customer-ring.show');
 
-    // Other utility routes
     Route::get('customer-ring/contact-details/{contact_id}', [CustomerRingController::class, 'getContactDetails'])->name('customer-ring.contact-details');
     Route::get('/customer-ring/get-ring-balances/{contact_id?}', [CustomerRingController::class, 'getRingBalances'])->name('customer-ring.getRingBalances');
     Route::get('/customer-ring/get-transaction-top-ups/{contact_id?}', [CustomerRingController::class, 'getTransactionTopUps'])->name('customer-ring.getTransactionTopUps');
     Route::get('customer-ring/view-transaction/{id}', [CustomerRingController::class, 'showTransactionTopUp'])->name('customer-ring.showTransactionTopUp');
 
     Route::get('customer-ring/adjust-stock-products', [CustomerRingController::class, 'getAdjustStockProducts'])
-    ->name('customer-ring.adjust-stock-products');
+        ->name('customer-ring.adjust-stock-products');
 
     Route::get('customer-ring/search-products', [CustomerRingController::class, 'searchProducts'])
         ->name('customer-ring.search-products');
@@ -739,7 +706,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
         ->name('customer-ring.adjust-stock');
 
     Route::resource('warehouse', WarehouseController::class)
-            ->only(['index', 'create', 'store', 'edit', 'update']);
+        ->only(['index', 'create', 'store', 'edit', 'update']);
     Route::get('warehouse/show/{id}', [WarehouseController::class, 'show'])->name('warehouse.show');
     Route::put('/warehouse/update-status/{id}', [WarehouseController::class, 'updateStatus'])->name('warehouse.update_status');
 
@@ -747,33 +714,29 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('purchase-stock-receive/get-purchase-orders/{contact_id}', [PurchaseStockReceiveController::class, 'getPurchaseOrders']);
     Route::get('purchase-stock-receive/get-purchase-order-details/{purchase_order_id}', [PurchaseStockReceiveController::class, 'getPurchaseOrderDetails']);
 
-Route::post('/cache-remaining-pages', [SellController::class, 'cacheRemainingPages']);
-
-// NEW route for progressive caching
-Route::post('/cache-chunks', [SellController::class, 'cacheAllPagesInChunks']);
-Route::get('sells/debug-pagination', [SellController::class, 'debugPagination'])->name('sells.debug-pagination');
-Route::get('sells/auto-refresh-check', [SellController::class, 'autoRefreshCheck'])->name('sells.auto-refresh-check');
-Route::post('sells/force-refresh', [SellController::class, 'forceRefresh'])->name('sells.force-refresh');
-Route::get('sells/cache-stats', [SellController::class, 'getCacheStats'])->name('sells.cache-stats');
+    Route::post('/cache-remaining-pages', [SellController::class, 'cacheRemainingPages']);
+    Route::post('/cache-chunks', [SellController::class, 'cacheAllPagesInChunks']);
+    Route::get('sells/debug-pagination', [SellController::class, 'debugPagination'])->name('sells.debug-pagination');
+    Route::get('sells/auto-refresh-check', [SellController::class, 'autoRefreshCheck'])->name('sells.auto-refresh-check');
+    Route::post('sells/force-refresh', [SellController::class, 'forceRefresh'])->name('sells.force-refresh');
+    Route::get('sells/cache-stats', [SellController::class, 'getCacheStats'])->name('sells.cache-stats');
     Route::post('/sells/calculations', [SellController::class, 'getCalculations'])->name('sells.calculations');
     Route::get('/sells/cache-status', [SellController::class, 'getCacheStatus'])
         ->name('sells.cache.status');
     Route::post('/sells/refresh-cache', [SellController::class, 'refreshCache'])
         ->name('sells.cache.refresh');
     Route::get('/sells/check-cache-updates', [SellController::class, 'checkCacheUpdates'])
-    ->name('sells.cache.check-updates');
+        ->name('sells.cache.check-updates');
     Route::post('/sells/clear-cache-refresh', [SellController::class, 'clearCacheOnRefresh'])
-    ->name('sells.cache.clear-refresh');
+        ->name('sells.cache.clear-refresh');
     Route::post('/sells/row-calculations', [SellController::class, 'getRowCalculations'])
-    ->name('sell.rowCalculations')
-    ->middleware(['auth', 'SetSessionData']);
-
+        ->name('sell.rowCalculations')
+        ->middleware(['auth', 'SetSessionData']);
 
     Route::post('/sells/row-data', [SellController::class, 'getRowData'])->name('sells.rowData');
 
-    // Avoid Sell list (soft-deleted sells)
     Route::get('sells/avoid', [SellController::class, 'avoidSellIndex'])
-    ->name('sells.avoid');
+        ->name('sells.avoid');
 
     Route::resource('sale-reward-supplier', SalesOrderRewardSupllierController::class)
         ->only(['index', 'create', 'store', 'edit', 'update']);
@@ -785,11 +748,7 @@ Route::get('sells/cache-stats', [SellController::class, 'getCacheStats'])->name(
     Route::get('sale-reward-supplier-receive/search-product', [SalesOrderRewardSupllierReceiveController::class, 'searchProduct'])->name('sale-reward-supplier-receive.searchProduct');
     Route::get('sale-reward-supplier-receive/get-product', [SalesOrderRewardSupllierReceiveController::class, 'getProduct'])->name('sale-reward-supplier-receive.getProduct');
     Route::get('sale-reward-supplier-receive/fetch-exchange-data', [SalesOrderRewardSupllierReceiveController::class, 'fetchExchangeData'])->name('sale-reward-supplier-receive.fetch-exchange-data');
-
-    // Step 2: RESOURCE route (this will handle index, create, store, show, edit, update, destroy)
     Route::resource('sale-reward-supplier-receive', SalesOrderRewardSupllierReceiveController::class);
-
-    // Step 3: ADDITIONAL specific routes after resource
     Route::get('sale-reward-supplier-receive/{id}/payment', [SalesOrderRewardSupllierReceiveController::class, 'payment'])->name('sale-reward-supplier-receive.payment');
     Route::get('sale-reward-supplier-receive/{id}/status', [SalesOrderRewardSupllierReceiveController::class, 'status'])->name('sale-reward-supplier-receive.status');
     Route::put('sale-reward-supplier-receive/{id}/update-status', [SalesOrderRewardSupllierReceiveController::class, 'update_status'])->name('sale-reward-supplier-receive.update_status');
@@ -797,7 +756,6 @@ Route::get('sells/cache-stats', [SellController::class, 'getCacheStats'])->name(
     Route::get('product_sale_visit', [ProductSaleVisitController::class, 'index'])->name('product_sale_visit.index');
     Route::post('product_sale_visit/update', [ProductSaleVisitController::class, 'updateSaleVisit'])->name('product_sale_visit.update');
 
-    // routes/web.php
     Route::get('rewards_exchange', [RewardExchangeController::class, 'index'])->name('rewards_exchange.index');
     Route::get('reward-exchange/create', [RewardExchangeController::class, 'create'])->name('reward-exchange.create');
     Route::post('reward-exchange/store', [RewardExchangeController::class, 'store'])->name('reward-exchange.store');
@@ -822,11 +780,10 @@ Route::get('sells/cache-stats', [SellController::class, 'getCacheStats'])->name(
     Route::get('search-product-ring-cash', [RewardExchangeController::class, 'searchProductRingCash'])->name('search-product-ring-cash');
     Route::delete('cash-ring/{id}', [RewardExchangeController::class, 'destroyCashRing'])->name('cash-ring.destroy');
     Route::post('rewards-exchange/save-exchange-rate', [RewardExchangeController::class, 'saveExchangeRate'])
-    ->name('rewards_exchange.save_rate');
+        ->name('rewards_exchange.save_rate');
     Route::get('reports/sale-revenue-ar', [ReportController::class, 'SaleRevenueAR'])
         ->name('reports.sale-revenue-ar');
    
-    //common controller for document & note
     Route::get('get-document-note-page', [DocumentAndNoteController::class, 'getDocAndNoteIndexPage']);
     Route::post('post-document-upload', [DocumentAndNoteController::class, 'postMedia']);
     Route::resource('note-documents', DocumentAndNoteController::class);
