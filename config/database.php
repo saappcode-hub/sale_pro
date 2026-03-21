@@ -42,6 +42,25 @@ return [
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
+        '5th_mysql' => [
+        'driver' => env('FIFTH_DB_CONNECTION', 'mysql'),
+        'url' => env('DATABASE_URL'),
+        'host' => env('FIFTH_DB_HOST', '127.0.0.1'),
+        'port' => env('FIFTH_DB_PORT', '3306'),
+        'database' => env('FIFTH_DB_DATABASE', 'forge'),
+        'username' => env('FIFTH_DB_USERNAME', 'forge'),
+        'password' => env('FIFTH_DB_PASSWORD', ''),
+        'unix_socket' => env('DB_SOCKET', ''),
+        'charset' => 'utf8mb4',
+        'collation' => 'utf8mb4_unicode_ci',
+        'prefix' => '',
+        'prefix_indexes' => true,
+        'strict' => false,
+        'engine' => null,
+        'options' => extension_loaded('pdo_mysql') ? array_filter([
+            PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+        ]) : [],
+    ],
 
         'mysql' => [
             'driver' => 'mysql',

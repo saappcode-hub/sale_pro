@@ -20,10 +20,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-autoloader
+RUN composer install --prefer-dist --no-interaction --optimize-autoloader
 
 COPY . .
-RUN composer dump-autoload --optimize --no-dev
+
+RUN rm -f bootstrap/cache/*.php
 
 FROM php:8.2-apache
 
@@ -59,9 +60,10 @@ RUN mkdir -p \
     public/uploads/documents \
     public/uploads/img \
     public/uploads/invoice_logos \
-    && chown -R www-data:www-data storage bootstrap/cache public/uploads
+    && chown -R www-data:www-data storage bootstrap/cache public/uploads \
+    && chmod -R 775 storage bootstrap/cache public/uploads
 
-RUN printf '<VirtualHost *:80>\n\
+RUN printf 'ServerName localhost\n<VirtualHost *:80>\n\
     DocumentRoot /var/www/html/public\n\
     <Directory /var/www/html/public>\n\
         AllowOverride All\n\

@@ -285,98 +285,70 @@ class ContactController extends ApiController
         }
      */
     public function index()
-    { 
-        $user = Auth::user();
-        if (! auth()->user()->can('supplier.view') && ! $user->hasPermissionTo('customer.view','web') && ! $user->hasPermissionTo('customer.view_own','web') && ! auth()->user()->can('supplier.view_own')) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        
-
-        $business_id = $user->business_id;
-        $type = request()->get('type', null);
-        $is_mobile = request()->get('is_mobile', 0);
-
-        $query = Contact::where('business_id', $business_id);
-
-        if ($type == 'supplier' && $is_mobile == 0) {
-            $query->onlySuppliers();
-        } elseif ($type == 'customer' && $is_mobile == 0) {
-            $query->onlyCustomers();
-        } elseif ($type == 'supplier' && $is_mobile == 1){
-            //  By Sokha CEO
-            $query->onlySuppliers();
-        } 
-        else {
-            if (auth()->check() 
-               && ((! $user->hasPermissionTo('customer.view','web') 
-               && $user->hasPermissionTo('customer.view_own','web'))) 
-                  || (! auth()->user()->can('supplier.view') 
-                  && auth()->user()->can('supplier.view_own'))) {
-                
-                if($is_mobile == 0){
-                  $query->onlyOwnContact();
-                }else{
-                  $query->onlyOwnContactFilter();
-                }
-            }
-            // else{
-            //     //
-            //     /*
-            //     Made a change to the code to check if the user has permission to view all contacts or only their own contacts.
-            //     If the user has permission to view all contacts, then the query will not filter by own contacts.
-            //     If the user has permission to view only their own contacts, then the query will filter by own contacts.
-            //     If the user does not have permission to view any contacts, then the query will filter by own contacts.
-            //     By Sokha CEO
-            //     */
-            //     //
-            //     if($is_mobile == 0){
-            //         $query->onlyOwnContact();
-            //       }else{
-            //         $query->onlyOwnContactFilter();
-            //       }
-            // }
-        }
-        $search = request()->only(['name', 'biz_name', 'mobile_num', 'contact_id']);
-        if (! empty($search)) {
-            $query->where(function ($query) use ($search) {
-                if (! empty($search['name'])) {
-                    $query->where('contacts.name', 'like', '%'.$search['name'].'%');
-                }
-
-                if (! empty($search['biz_name'])) {
-                    $query->orWhere('contacts.supplier_business_name', 'like', '%'.$search['biz_name'].'%');
-                }
-
-                if (! empty($search['mobile_num'])) {
-                    $query->orWhere('contacts.mobile', 'like', '%'.$search['mobile_num'].'%')
-                        ->orWhere('contacts.landline', 'like', '%'.$search['mobile_num'].'%')
-                        ->orWhere('contacts.alternate_number', 'like', '%'.$search['mobile_num'].'%');
-                }
-
-                if (! empty($search['contact_id'])) {
-                    $query->orWhere('contacts.contact_id', 'like', '%'.$search['contact_id'].'%');
-                }
-            });
-        }
-
-        $order_by = request()->input('order_by');
-        $order_by_dir = request()->input('direction');
-        if (! empty($order_by) && ! empty($order_by_dir)) {
-            $query->orderBy($order_by, $order_by_dir);
-        }
-
-        $per_page = ! empty(request()->input('per_page')) ? request()->input('per_page') : $this->perPage;
-
-        if ($per_page != -1) {
-            $contacts = $query->with('contactMap')->paginate($per_page);
-            $contacts->appends(request()->query());
-        } else {
-            $contacts = $query->with('contactMap')->get();
-        }
-
-        return CommonResource::collection($contacts);
+{ 
+    $user = Auth::user();
+    if (! auth()->user()->can('supplier.view') && ! $user->hasPermissionTo('customer.view','web') && ! $user->hasPermissionTo('customer.view_own','web') && ! auth()->user()->can('supplier.view_own')) {
+        abort(403, 'Unauthorized action.');
     }
+
+    $business_id = $user->business_id;
+    $type = request()->get('type', 'all');
+    $is_mobile = request()->get('is_mobile', 0);
+
+    $query = Contact::where('business_id', $business_id);
+
+    if ($type == 'supplier' && $is_mobile == 0) {
+        $query->onlySuppliers();
+    } elseif ($type == 'customer' && $is_mobile == 0) {
+        $query->onlyCustomers();
+    } elseif ($type == 'supplier' && $is_mobile == 1) {
+        $query->onlySuppliers();
+    } elseif ($type == 'customer' && $is_mobile == 1) {
+        $query->onlyCustomers();
+    } else {
+        $query->whereIn('contacts.type', ['customer', 'supplier', 'both']);
+    }
+
+    $search = request()->only(['name', 'biz_name', 'mobile_num', 'contact_id']);
+    if (! empty(array_filter($search, fn($value) => $value !== null && $value !== ''))) {
+        $query->where(function ($query) use ($search) {
+            if (! empty($search['name'])) {
+                $query->where('contacts.name', 'like', '%'.$search['name'].'%');
+            }
+
+            if (! empty($search['biz_name'])) {
+                $query->orWhere('contacts.supplier_business_name', 'like', '%'.$search['biz_name'].'%');
+            }
+
+            if (! empty($search['mobile_num'])) {
+                $query->orWhere('contacts.mobile', 'like', '%'.$search['mobile_num'].'%')
+                    ->orWhere('contacts.landline', 'like', '%'.$search['mobile_num'].'%')
+                    ->orWhere('contacts.alternate_number', 'like', '%'.$search['mobile_num'].'%');
+            }
+
+            if (! empty($search['contact_id'])) {
+                $query->orWhere('contacts.contact_id', 'like', '%'.$search['contact_id'].'%');
+            }
+        });
+    }
+
+    $order_by = request()->input('order_by');
+    $order_by_dir = request()->input('direction');
+    if (! empty($order_by) && ! empty($order_by_dir)) {
+        $query->orderBy($order_by, $order_by_dir);
+    }
+
+    $per_page = ! empty(request()->input('per_page')) ? request()->input('per_page') : $this->perPage;
+
+    if ($per_page != -1) {
+        $contacts = $query->with('contactMap')->paginate($per_page);
+        $contacts->appends(request()->query());
+    } else {
+        $contacts = $query->with('contactMap')->get();
+    }
+
+    return CommonResource::collection($contacts);
+}
 
     /**
      * Create contact

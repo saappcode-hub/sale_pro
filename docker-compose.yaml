@@ -1,29 +1,29 @@
-services:
-  app:
-    image: yourdockerhubusername/yourimage:latest
-    container_name: salepro-app
-    restart: unless-stopped
-    depends_on:
-      - db
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
+# services:
+#   app:
+#     image: yourdockerhubusername/yourimage:latest
+#     container_name: salepro-app
+#     restart: unless-stopped
+#     depends_on:
+#       - db
+#     ports:
+#       - "8000:8000"
+#     env_file:
+#       - .env
 
-  db:
-    image: mysql:8.0
-    container_name: salepro-db
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: salepro
-      MYSQL_USER: salepro_user
-      MYSQL_PASSWORD: salepro_pass_123
-      MYSQL_ROOT_PASSWORD: root_pass_123
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
+#   db:
+#     image: mysql:8.0
+#     container_name: salepro-db
+#     restart: unless-stopped
+#     environment:
+#       MYSQL_DATABASE: salepro
+#       MYSQL_USER: salepro_user
+#       MYSQL_PASSWORD: salepro_pass_123
+#       MYSQL_ROOT_PASSWORD: root_pass_123
+#     ports:
+#       - "3306:3306"
+#     volumes:
+#       - mysql_data:/var/lib/mysql
+#     command: --default-authentication-plugin=mysql_native_password
 
-volumes:
-  mysql_data:
+# volumes:
+#   mysql_data:
