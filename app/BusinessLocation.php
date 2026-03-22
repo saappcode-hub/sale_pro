@@ -4,6 +4,7 @@ namespace App;
 
 use DB;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class BusinessLocation extends Model
 {
@@ -43,7 +44,7 @@ class BusinessLocation extends Model
         }
 
         if ($append_id) {
-            $query->select(
+            $columns = [
                 DB::raw("IF(location_id IS NULL OR location_id='', name, CONCAT(name, ' (', location_id, ')')) AS name"),
                 'id',
                 'receipt_printer_type',
@@ -51,9 +52,14 @@ class BusinessLocation extends Model
                 'default_payment_accounts',
                 'invoice_scheme_id',
                 'invoice_layout_id',
-                'invoice_qrs_id',
                 'sale_invoice_scheme_id'
-            );
+            ];
+
+            if (Schema::hasColumn('business_locations', 'invoice_qrs_id')) {
+                $columns[] = 'invoice_qrs_id';
+            }
+
+            $query->select($columns);
         }
 
         $result = $query->get();
@@ -81,7 +87,7 @@ class BusinessLocation extends Model
                     'data-default_sale_invoice_scheme_id' => $item->sale_invoice_scheme_id,
                     'data-default_invoice_scheme_id' => $item->invoice_scheme_id,
                     'data-default_invoice_layout_id' => $item->invoice_layout_id,
-                    'data-default_invoice_qrs_id' => $item->invoice_qrs_id,
+                    'data-default_invoice_qrs_id' => $item->invoice_qrs_id ?? null,
                 ],
                 ];
             })->all();

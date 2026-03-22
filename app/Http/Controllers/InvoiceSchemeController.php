@@ -7,6 +7,7 @@ use App\InvoiceQrs;
 use App\InvoiceScheme;
 use Datatables;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class InvoiceSchemeController extends Controller
 {
@@ -73,9 +74,12 @@ class InvoiceSchemeController extends Controller
         $invoice_layouts = InvoiceLayout::where('business_id', $business_id)
                                         ->with(['locations'])
                                         ->get();
-        $invoice_qrs = InvoiceQrs::where('business_id', $business_id)
-                                        ->with(['locations'])
-                                        ->get();
+        $invoice_qrs = collect();
+        if (Schema::hasTable('invoice_qrs')) {
+            $invoice_qrs = InvoiceQrs::where('business_id', $business_id)
+                                            ->with(['locations'])
+                                            ->get();
+        }
 
         return view('invoice_scheme.index')
                     ->with(compact('invoice_layouts','invoice_qrs'));

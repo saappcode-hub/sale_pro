@@ -30,6 +30,7 @@ use App\Warranty;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 use Queue;
 use Spatie\Activitylog\Models\Activity;
 use Yajra\DataTables\Facades\DataTables;
@@ -1489,8 +1490,11 @@ private function quickCacheUpdate($business_id, $transaction)
     // This removes the heavy payment_totals, return_data, sell_lines JOINs
 
     $query->where('transactions.business_id', $business_id)
-        ->where('transactions.type', $sale_type)
-        ->whereNull('transactions.deleted_at');
+        ->where('transactions.type', $sale_type);
+
+    if (Schema::hasColumn('transactions', 'deleted_at')) {
+        $query->whereNull('transactions.deleted_at');
+    }
 
     if ($sale_type == 'sell') {
         $query->whereIn('transactions.status', ['final', 'draft']);
@@ -3257,7 +3261,6 @@ public function updateCacheAfterDelete($business_id, $transaction_id, $sale_type
                 ->where('transactions.business_id', $business_id)
                 ->where('transactions.type', 'sell')
                 ->where('transactions.status', 'draft')
-                ->whereNull('transactions.deleted_at')
                 ->select(
                     'transactions.id',
                     'transaction_date',
@@ -3274,6 +3277,10 @@ public function updateCacheAfterDelete($business_id, $transaction_id, $sale_type
                     DB::raw("CONCAT(COALESCE(u.surname, ''), ' ', COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as added_by"),
                     'transactions.is_export'
                 );
+
+            if (Schema::hasColumn('transactions', 'deleted_at')) {
+                $sells->whereNull('transactions.deleted_at');
+            }
 
             if ($is_quotation == 1) {
                 $sells->where('transactions.sub_status', 'quotation');

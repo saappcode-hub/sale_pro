@@ -11,6 +11,7 @@ use App\SellingPriceGroup;
 use App\Utils\ModuleUtil;
 use App\Utils\Util;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -120,9 +121,12 @@ class BusinessLocationController extends Controller
                             ->get()
                             ->pluck('name', 'id');
 
-        $invoice_qrs = InvoiceQrs::where('business_id', $business_id)
-                            ->get()
-                            ->pluck('name', 'id');
+        $invoice_qrs = collect();
+        if (Schema::hasTable('invoice_qrs')) {
+            $invoice_qrs = InvoiceQrs::where('business_id', $business_id)
+                                ->get()
+                                ->pluck('name', 'id');
+        }
 
         $invoice_schemes = InvoiceScheme::where('business_id', $business_id)
                             ->get()
@@ -171,8 +175,12 @@ class BusinessLocationController extends Controller
                 return $this->moduleUtil->quotaExpiredResponse('locations', $business_id);
             }
 
-            $input = $request->only(['name', 'landmark', 'city', 'state', 'country', 'zip_code', 'invoice_scheme_id',
-                'invoice_layout_id','invoice_qrs_id', 'mobile', 'alternate_number', 'email', 'website', 'custom_field1', 'custom_field2', 'custom_field3', 'custom_field4', 'location_id', 'selling_price_group_id', 'default_payment_accounts', 'featured_products', 'sale_invoice_layout_id', 'sale_invoice_scheme_id']);
+            $fields = ['name', 'landmark', 'city', 'state', 'country', 'zip_code', 'invoice_scheme_id',
+                'invoice_layout_id', 'mobile', 'alternate_number', 'email', 'website', 'custom_field1', 'custom_field2', 'custom_field3', 'custom_field4', 'location_id', 'selling_price_group_id', 'default_payment_accounts', 'featured_products', 'sale_invoice_layout_id', 'sale_invoice_scheme_id'];
+            if (Schema::hasColumn('business_locations', 'invoice_qrs_id')) {
+                $fields[] = 'invoice_qrs_id';
+            }
+            $input = $request->only($fields);
 
             $input['business_id'] = $business_id;
 
@@ -247,9 +255,12 @@ class BusinessLocationController extends Controller
         $business_id = request()->session()->get('user.business_id');
         $location = BusinessLocation::where('business_id', $business_id)
                                     ->find($id);
-        $invoice_qrs = InvoiceQrs::where('business_id', $business_id)
-                            ->get()
-                            ->pluck('name', 'id');
+        $invoice_qrs = collect();
+        if (Schema::hasTable('invoice_qrs')) {
+            $invoice_qrs = InvoiceQrs::where('business_id', $business_id)
+                                ->get()
+                                ->pluck('name', 'id');
+        }
         $invoice_layouts = InvoiceLayout::where('business_id', $business_id)
                             ->get()
                             ->pluck('name', 'id');
@@ -296,9 +307,13 @@ class BusinessLocationController extends Controller
     }
     
     try {
-        $input = $request->only(['name', 'landmark', 'city', 'state', 'country',
+        $fields = ['name', 'landmark', 'city', 'state', 'country',
             'zip_code', 'invoice_scheme_id',
-            'invoice_layout_id','invoice_qrs_id', 'mobile', 'alternate_number', 'email', 'website', 'custom_field1', 'custom_field2', 'custom_field3', 'custom_field4', 'location_id', 'selling_price_group_id', 'default_payment_accounts', 'featured_products', 'sale_invoice_layout_id', 'sale_invoice_scheme_id' ]);
+            'invoice_layout_id', 'mobile', 'alternate_number', 'email', 'website', 'custom_field1', 'custom_field2', 'custom_field3', 'custom_field4', 'location_id', 'selling_price_group_id', 'default_payment_accounts', 'featured_products', 'sale_invoice_layout_id', 'sale_invoice_scheme_id' ];
+        if (Schema::hasColumn('business_locations', 'invoice_qrs_id')) {
+            $fields[] = 'invoice_qrs_id';
+        }
+        $input = $request->only($fields);
         
         $business_id = $request->session()->get('user.business_id');
         
